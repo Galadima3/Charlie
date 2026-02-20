@@ -1,5 +1,6 @@
-use crate::db::{get_user_by_username, user_exists};
+
 use crate::models::{User, UserRequest};
+use crate::service::user_service::{self, UserServiceError};
 use axum::{Extension, Json, extract::State, http::StatusCode, response::IntoResponse};
 use axum_session_auth::AuthSession;
 use axum_session_sqlx::SessionSqlitePool;
@@ -10,15 +11,20 @@ pub async fn register(
     State(pool): State<SqlitePool>,
     Json(payload): Json<UserRequest>,
 ) -> impl IntoResponse {
-    if user_exists(&pool, &payload.username).await {
+    if let Err(UserServiceError::UserAlreadyExists) =
+        user_service::check_user_exists(&pool, &payload.username).await
+    {
         return (
-            StatusCode::BAD_REQUEST,
-            format!("Username '{}' is already taken", payload.username),
+            StatusCode::CONFLICT,
+            format!("User '{}' is already exists", payload.username),
         )
             .into_response();
     }
 
-    let hashed_password = hash(&payload.password, 10).unwrap_or_default();
+    let hashed_password = match hash(&payload.password, 10) {
+        Ok(p) => p,
+        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Hashing failed").into_response(),
+    };
 
     if let Err(_) = sqlx::query("INSERT INTO users (username, password) VALUES (?, ?)")
         .bind(&payload.username)
@@ -26,7 +32,7 @@ pub async fn register(
         .execute(&pool)
         .await
     {
-        return (StatusCode::INTERNAL_SERVER_ERROR, "DB error").into_response();
+        return (StatusCode::INTERNAL_SERVER_ERROR, "Database error").into_response();
     }
 
     StatusCode::CREATED.into_response()
@@ -37,17 +43,21 @@ pub async fn login(
     State(pool): State<SqlitePool>,
     Json(payload): Json<UserRequest>,
 ) -> impl IntoResponse {
-    let user = match get_user_by_username(&pool, &payload.username).await {
-        Some(u) => u,
-        None => {
+
+    
+    let user = match user_service::get_user(&pool, &payload.username).await {
+        Ok(user) => user,
+        Err(UserServiceError::UserNotFound) => {
             return (
                 StatusCode::BAD_REQUEST,
                 format!("Username '{}' is not registered", payload.username),
             )
                 .into_response();
         }
+        Err(_) => return (StatusCode::INTERNAL_SERVER_ERROR, "Service error").into_response(),
     };
 
+    
     if verify(&payload.password, &user.password).unwrap_or(false) {
         auth.login_user(user.id as i64);
         (StatusCode::OK, "Login successful").into_response()
@@ -55,6 +65,7 @@ pub async fn login(
         (StatusCode::UNAUTHORIZED, "Incorrect password").into_response()
     }
 }
+
 
 pub async fn log_out(
     auth: AuthSession<User, i64, SessionSqlitePool, SqlitePool>,

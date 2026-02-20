@@ -1,8 +1,9 @@
 mod models;
 mod db;
-mod handlers;
+mod repository;
+mod service;
+mod handler;
 mod middleware;
-
 
 
 use axum::{
@@ -15,10 +16,10 @@ use axum_session_auth::{AuthConfig, AuthSessionLayer};
 use axum_session_sqlx::SessionSqlitePool;
 use sqlx::SqlitePool;
 
-use crate::models::User;
+use crate::{middleware::user_middleware::auth_middleware, models::User};
+use crate::handler::user_handler::{register, login, log_out, protected };
 use crate::db::{init_db, init_session};
-use crate::handlers::{ register, login, log_out, protected};
-use crate::middleware::auth_middleware;
+
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
