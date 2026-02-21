@@ -7,7 +7,7 @@ use axum::{
 use axum_session_auth::AuthSession;
 use axum_session_sqlx::SessionSqlitePool;
 use sqlx::SqlitePool;
-use crate::models::User;
+use crate::features::user::model::User;
 
 pub async fn auth_middleware(
     auth: AuthSession<User, i64, SessionSqlitePool, SqlitePool>,

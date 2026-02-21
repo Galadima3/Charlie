@@ -1,18 +1,19 @@
 
-use crate::models::{User, UserRequest};
-use crate::service::user_service::{self, UserServiceError};
 use axum::{Extension, Json, extract::State, http::StatusCode, response::IntoResponse};
 use axum_session_auth::AuthSession;
 use axum_session_sqlx::SessionSqlitePool;
 use bcrypt::{hash, verify};
 use sqlx::SqlitePool;
 
+use crate::features::user::model::{User, UserRequest};
+use crate::features::user::service::{UserServiceError, self};
+
 pub async fn register(
     State(pool): State<SqlitePool>,
     Json(payload): Json<UserRequest>,
 ) -> impl IntoResponse {
     if let Err(UserServiceError::UserAlreadyExists) =
-        user_service::check_user_exists(&pool, &payload.username).await
+        service::check_user_exists(&pool, &payload.username).await
     {
         return (
             StatusCode::CONFLICT,
@@ -45,7 +46,7 @@ pub async fn login(
 ) -> impl IntoResponse {
 
     
-    let user = match user_service::get_user(&pool, &payload.username).await {
+    let user = match service::get_user(&pool, &payload.username).await {
         Ok(user) => user,
         Err(UserServiceError::UserNotFound) => {
             return (

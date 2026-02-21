@@ -1,5 +1,7 @@
-use crate::models::{UserSql};
+
 use sqlx::{SqlitePool};
+
+use crate::features::user::model::UserSql;
 
 pub async fn user_exists(pool: &SqlitePool, username: &str) -> bool {
     sqlx::query("SELECT 1 FROM users WHERE username = ?")

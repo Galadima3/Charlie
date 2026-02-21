@@ -1,7 +1,7 @@
 use sqlx::{Executor, SqlitePool};
 use axum_session_sqlx::SessionSqlitePool;
 use axum_session::{SessionConfig, SessionStore, Key};
-use crate::models::{User, UserSql};
+use crate::features::user::model::{User, UserSql};
 use async_trait::async_trait;
 use axum_session_auth::Authentication;
 
