@@ -1,6 +1,3 @@
-mod db;
-mod features;
-
 use axum::{
     Router,
     middleware::from_fn,
@@ -12,8 +9,10 @@ use axum_session_sqlx::SessionSqlitePool;
 use sqlx::SqlitePool;
 
 use crate::features::user::{handler::{log_out, login, protected, register }, middleware::auth_middleware, model::User};
-use crate::db::{init_db, init_session};
+use crate::core::db::{init_db, init_session};
 
+mod core; 
+mod features;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

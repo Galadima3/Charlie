@@ -1,0 +1,21 @@
+get http://localhost:3000/
+
+###
+
+POST http://localhost:3000/register
+Content-Type: application/json
+
+{
+"username": "winner1",
+"password": "12345"
+}
+
+###
+
+POST http://localhost:3000/login
+Content-Type: application/json
+
+{
+"username": "winner1",
+"password": "12345"
+}
