@@ -1,3 +1,9 @@
+# Rust Build artifacts
 /target
+
+#Database
 db.sqlite
-*.HTTP
+
+# REST Client files
+*.http
+*.rest
